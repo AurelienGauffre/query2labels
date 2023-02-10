@@ -1,7 +1,8 @@
 import torchvision.transforms as transforms
 from dataset.cocodataset import CoCoDataset
 from utils.cutout import SLCutoutPIL
-from randaugment import RandAugment
+from torchvision.transforms import RandAugment
+from pathlib import Path
 import os.path as osp
 
 def get_datasets(args):
@@ -35,7 +36,7 @@ def get_datasets(args):
 
     if args.dataname == 'coco' or args.dataname == 'coco14':
         # ! config your data path here.
-        dataset_dir = args.dataset_dir
+        dataset_dir = Path(Path.home() / 'datasets' / args.dataname)
         train_dataset = CoCoDataset(
             image_dir=osp.join(dataset_dir, 'train2014'),
             anno_path=osp.join(dataset_dir, 'annotations/instances_train2014.json'),

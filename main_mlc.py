@@ -1,3 +1,5 @@
+IMG_SIZE = 224  #default 448
+BS = 32 #default 256
 import argparse
 import math
 import os, sys
@@ -33,15 +35,16 @@ from utils.metric import voc_mAP
 from utils.misc import clean_state_dict
 from utils.slconfig import get_raw_dict
 
+from pathlib import Path
 
 def parser_args():
     parser = argparse.ArgumentParser(description='Query2Label MSCOCO Training')
     parser.add_argument('--dataname', help='dataname', default='coco14', choices=['coco14'])
-    parser.add_argument('--dataset_dir', help='dir of dataset', default='/comp_robot/liushilong/data/COCO14/')
-    parser.add_argument('--img_size', default=448, type=int,
+    #parser.add_argument('--dataset_dir', help='dir of dataset', default='/comp_robot/liushilong/data/COCO14/')
+    parser.add_argument('--img_size', default=IMG_SIZE, type=int,
                         help='size of input images')
 
-    parser.add_argument('--output', metavar='DIR', 
+    parser.add_argument('--output', default=str(Path(__file__).parent.resolve() / 'output'),
                         help='path to output folder')
     parser.add_argument('--num_class', default=80, type=int,
                         help="Number of query slots")
@@ -175,10 +178,10 @@ def main():
         assert args.world_size > 0, 'please set --world-size and --rank in the command line'
         # launch by torch.distributed.launch
         # Single node
-        #   python -m torch.distributed.launch --nproc_per_node=8 main.py --world-size 1 --rank 0 ...
+        #   python3 -m torch.distributed.launch --nproc_per_node=1 main_mlc.py --world-size 1 --rank 0
         # Multi nodes
-        #   python -m torch.distributed.launch --nproc_per_node=8 main.py --world-size 2 --rank 0 --dist-url 'tcp://IP_OF_NODE0:FREEPORT' ...
-        #   python -m torch.distributed.launch --nproc_per_node=8 main.py --world-size 2 --rank 1 --dist-url 'tcp://IP_OF_NODE0:FREEPORT' ...
+        #   python -m torch.distributed.launch --nproc_per_node=8 main_mlc.py --world-size 2 --rank 0 --dist-url 'tcp://IP_OF_NODE0:FREEPORT' ...
+        #   python -m torch.distributed.launch --nproc_per_node=8 main_mlc.py --world-size 2 --rank 1 --dist-url 'tcp://IP_OF_NODE0:FREEPORT' ...
         local_world_size = int(os.environ['WORLD_SIZE'])
         args.world_size = args.world_size * local_world_size
         args.rank = args.rank * local_world_size + args.local_rank

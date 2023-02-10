@@ -1,5 +1,6 @@
 IMG_SIZE = 224  #default 448
-BS = 32 #default 256
+BS = 64 #default 256
+
 import argparse
 import math
 import os, sys
@@ -67,7 +68,7 @@ def parser_args():
     parser.add_argument('--loss_clip', default=0.0, type=float,
                                             help='scale factor for clip')  
 
-    parser.add_argument('-j', '--workers', default=32, type=int, metavar='N',
+    parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
                         help='number of data loading workers (default: 32)')
     parser.add_argument('--epochs', default=80, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -403,7 +404,7 @@ def main_worker(args, logger):
             if dist.get_rank() == 0:
                 save_checkpoint({
                     'epoch': epoch + 1,
-                    'arch': args.arch,
+                    'arch': args.backbone,
                     'state_dict': state_dict,
                     'best_mAP': best_mAP,
                     'optimizer' : optimizer.state_dict(),
@@ -413,7 +414,7 @@ def main_worker(args, logger):
             if math.isnan(loss) or math.isnan(loss_ema):
                 save_checkpoint({
                     'epoch': epoch + 1,
-                    'arch': args.arch,
+                    'arch': args.backbone,
                     'state_dict': model.state_dict(),
                     'best_mAP': best_mAP,
                     'optimizer' : optimizer.state_dict(),

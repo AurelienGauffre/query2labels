@@ -3,3 +3,7 @@ einops
 addict
 yapf
 inplace_abn
+termcolor
+tensorboard
+einops
+timm

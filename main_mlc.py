@@ -1,5 +1,6 @@
 IMG_SIZE = 224  # default 448
-BS = 256  # default 256
+BS = 64  # default 256
+LR = 1e-3 # default dans le code 1e-1 dans le papier 1e-4 donc bizarre
 
 WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'
 WANDB_GROUP = 'q2l'
@@ -90,7 +91,7 @@ def parser_args():
                         help='mini-batch size (default: 256), this is the total '
                              'batch size of all GPUs')
 
-    parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
+    parser.add_argument('--lr', '--learning-rate', default=LR, type=float,
                         metavar='LR', help='initial learning rate', dest='lr')
     parser.add_argument('--wd', '--weight-decay', default=1e-2, type=float,
                         metavar='W', help='weight decay (default: 1e-2)',

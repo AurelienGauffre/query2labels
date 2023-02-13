@@ -1,6 +1,6 @@
 # python3 -m torch.distributed.launch --nproc_per_node=1 main_mlc.py --world-size 1 --rank 0
 IMG_SIZE = 224  # default 448
-BS = 16  # default 256
+BS = 64  # default 256
 LR = 1e-3 # default dans le code 1e-1 dans le papier 1e-4 donc bizarre
 
 WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'
@@ -87,7 +87,7 @@ def parser_args():
 
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                         help='manual epoch number (useful on restarts)')
-    parser.add_argument('-b', '--batch-size', default=256, type=int,
+    parser.add_argument('-b', '--batch-size', default=BS, type=int,
                         metavar='N',
                         help='mini-batch size (default: 256), this is the total '
                              'batch size of all GPUs')

@@ -3,6 +3,7 @@ BS = 256  # default 256
 
 WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'
 WANDB_GROUP = 'q2l'
+WORKERS = 8
 
 import argparse
 import math
@@ -74,7 +75,7 @@ def parser_args():
     parser.add_argument('--loss_clip', default=0.0, type=float,
                         help='scale factor for clip')
 
-    parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
+    parser.add_argument('-j', '--workers', default=WORKERS, type=int, metavar='N',
                         help='number of data loading workers (default: 32)')
     parser.add_argument('--epochs', default=80, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -422,7 +423,7 @@ def main_worker(args, logger):
                 }, is_best=is_best, filename=os.path.join(args.output, 'checkpoint.pth.tar'))
             # filename=os.path.join(args.output, 'checkpoint_{:04d}.pth.tar'.format(epoch))
 
-            if math.isnan(loss) or math.isnan(loss_ema):
+            if math.isnan(val_loss) or math.isnan(loss_ema):
                 save_checkpoint({
                     'epoch': epoch + 1,
                     'arch': args.backbone,

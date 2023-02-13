@@ -1,5 +1,6 @@
+# python3 -m torch.distributed.launch --nproc_per_node=1 main_mlc.py --world-size 1 --rank 0
 IMG_SIZE = 224  # default 448
-BS = 64  # default 256
+BS = 16  # default 256
 LR = 1e-3 # default dans le code 1e-1 dans le papier 1e-4 donc bizarre
 
 WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'

@@ -1,5 +1,5 @@
 IMG_SIZE = 224  # default 448
-BS = 64  # default 256
+BS = 256  # default 256
 
 WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'
 WANDB_GROUP = 'q2l'

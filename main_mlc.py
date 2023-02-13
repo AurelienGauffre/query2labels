@@ -1,5 +1,8 @@
-IMG_SIZE = 224  #default 448
-BS = 64 #default 256
+IMG_SIZE = 224  # default 448
+BS = 64  # default 256
+
+WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'
+WANDB_GROUP = 'q2l'
 
 import argparse
 import math
@@ -22,7 +25,7 @@ import torch.optim
 import torch.multiprocessing as mp
 import torch.utils.data
 import torch.utils.data.distributed
-
+import wandb
 from torch.utils.tensorboard import SummaryWriter
 
 import _init_paths
@@ -38,10 +41,13 @@ from utils.slconfig import get_raw_dict
 
 from pathlib import Path
 
+wandb.login()
+
+
 def parser_args():
     parser = argparse.ArgumentParser(description='Query2Label MSCOCO Training')
     parser.add_argument('--dataname', help='dataname', default='coco14', choices=['coco14'])
-    #parser.add_argument('--dataset_dir', help='dir of dataset', default='/comp_robot/liushilong/data/COCO14/')
+    # parser.add_argument('--dataset_dir', help='dir of dataset', default='/comp_robot/liushilong/data/COCO14/')
     parser.add_argument('--img_size', default=IMG_SIZE, type=int,
                         help='size of input images')
 
@@ -57,16 +63,16 @@ def parser_args():
     # loss
     parser.add_argument('--eps', default=1e-5, type=float,
                         help='eps for focal loss (default: 1e-5)')
-    parser.add_argument('--dtgfl', action='store_true', default=False, 
-                        help='disable_torch_grad_focal_loss in asl')              
+    parser.add_argument('--dtgfl', action='store_true', default=False,
+                        help='disable_torch_grad_focal_loss in asl')
     parser.add_argument('--gamma_pos', default=0, type=float,
                         metavar='gamma_pos', help='gamma pos for simplified asl loss')
     parser.add_argument('--gamma_neg', default=2, type=float,
                         metavar='gamma_neg', help='gamma neg for simplified asl loss')
     parser.add_argument('--loss_dev', default=-1, type=float,
-                                            help='scale factor for loss')
+                        help='scale factor for loss')
     parser.add_argument('--loss_clip', default=0.0, type=float,
-                                            help='scale factor for clip')  
+                        help='scale factor for clip')
 
     parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
                         help='number of data loading workers (default: 32)')
@@ -81,7 +87,7 @@ def parser_args():
     parser.add_argument('-b', '--batch-size', default=256, type=int,
                         metavar='N',
                         help='mini-batch size (default: 256), this is the total '
-                            'batch size of all GPUs')
+                             'batch size of all GPUs')
 
     parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                         metavar='LR', help='initial learning rate', dest='lr')
@@ -102,7 +108,6 @@ def parser_args():
     parser.add_argument('--ema-epoch', default=0, type=int, metavar='M',
                         help='start ema epoch')
 
-
     # distribution training
     parser.add_argument('--world-size', default=-1, type=int,
                         help='number of nodes for distributed training')
@@ -114,23 +119,21 @@ def parser_args():
                         help='seed for initializing training. ')
     parser.add_argument("--local_rank", type=int, help='local rank for DistributedDataParallel')
 
-
     # data aug
     parser.add_argument('--cutout', action='store_true', default=False,
                         help='apply cutout')
     parser.add_argument('--n_holes', type=int, default=1,
-                        help='number of holes to cut out from image')              
+                        help='number of holes to cut out from image')
     parser.add_argument('--length', type=int, default=-1,
                         help='length of the holes. suggest to use default setting -1.')
     parser.add_argument('--cut_fact', type=float, default=0.5,
-                        help='mutual exclusion with length. ') 
+                        help='mutual exclusion with length. ')
 
     parser.add_argument('--orid_norm', action='store_true', default=False,
                         help='using mean [0,0,0] and std [1,1,1] to normalize input images')
 
-
     # * Transformer
-    parser.add_argument('--enc_layers', default=1, type=int, 
+    parser.add_argument('--enc_layers', default=1, type=int,
                         help="Number of encoding layers in the transformer")
     parser.add_argument('--dec_layers', default=2, type=int,
                         help="Number of decoding layers in the transformer")
@@ -147,11 +150,11 @@ def parser_args():
                         help="Type of positional embedding to use on top of the image features")
     parser.add_argument('--backbone', default='resnet101', type=str,
                         help="Name of the convolutional backbone to use")
-    parser.add_argument('--keep_other_self_attn_dec', action='store_true', 
+    parser.add_argument('--keep_other_self_attn_dec', action='store_true',
                         help='keep the other self attention modules in transformer decoders, which will be removed default.')
     parser.add_argument('--keep_first_self_attn_dec', action='store_true',
                         help='keep the first self attention module in transformer decoders, which will be removed default.')
-    parser.add_argument('--keep_input_proj', action='store_true', 
+    parser.add_argument('--keep_input_proj', action='store_true',
                         help="keep the input projection layer. Needed when the channel of image features is different from hidden_dim of Transformer layers.")
 
     # * raining
@@ -164,17 +167,22 @@ def parser_args():
     args = parser.parse_args()
     return args
 
+
 def get_args():
     args = parser_args()
     return args
 
 
-
 best_mAP = 0
+
 
 def main():
     args = get_args()
-    
+    wandb.init(project="multilabel-contrastive",
+               group=WANDB_GROUP,
+               entity='aureliengauffre',
+               config=args)
+    wandb.run.name = WANDB_RUN_NAME
     if 'WORLD_SIZE' in os.environ:
         assert args.world_size > 0, 'please set --world-size and --rank in the command line'
         # launch by torch.distributed.launch
@@ -200,18 +208,16 @@ def main():
         torch.manual_seed(args.seed)
         np.random.seed(args.seed)
 
-    
     torch.cuda.set_device(args.local_rank)
     print('| distributed init (local_rank {}): {}'.format(
         args.local_rank, args.dist_url), flush=True)
-    torch.distributed.init_process_group(backend='nccl', init_method=args.dist_url, 
-                                world_size=args.world_size, rank=args.rank)
+    torch.distributed.init_process_group(backend='nccl', init_method=args.dist_url,
+                                         world_size=args.world_size, rank=args.rank)
     cudnn.benchmark = True
-    
 
     os.makedirs(args.output, exist_ok=True)
     logger = setup_logger(output=args.output, distributed_rank=dist.get_rank(), color=False, name="Q2L")
-    logger.info("Command: "+' '.join(sys.argv))
+    logger.info("Command: " + ' '.join(sys.argv))
     if dist.get_rank() == 0:
         path = os.path.join(args.output, "config.json")
         with open(path, 'w') as f:
@@ -224,13 +230,14 @@ def main():
 
     return main_worker(args, logger)
 
+
 def main_worker(args, logger):
     global best_mAP
 
     # build model
     model = build_q2l(args)
     model = model.cuda()
-    ema_m = ModelEma(model, args.ema_decay) # 0.9997
+    ema_m = ModelEma(model, args.ema_decay)  # 0.9997
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], broadcast_buffers=False)
 
     # criterion
@@ -258,10 +265,9 @@ def main_worker(args, logger):
             parameters,
             args.lr_mult * args.lr,
             betas=(0.9, 0.999), eps=1e-08, weight_decay=0
-        )          
+        )
     else:
         raise NotImplementedError
-
 
     # tensorboard
     if dist.get_rank() == 0:
@@ -288,10 +294,10 @@ def main_worker(args, logger):
             model.module.load_state_dict(state_dict, strict=False)
             # model.module.load_state_dict(checkpoint['state_dict'])
             logger.info("=> loaded checkpoint '{}' (epoch {})"
-                  .format(args.resume, checkpoint['epoch']))
+                        .format(args.resume, checkpoint['epoch']))
             del checkpoint
             del state_dict
-            torch.cuda.empty_cache() 
+            torch.cuda.empty_cache()
         else:
             logger.info("=> no checkpoint found at '{}'".format(args.resume))
 
@@ -303,19 +309,17 @@ def main_worker(args, logger):
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size // dist.get_world_size(), shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler, drop_last=True)
-    
+
     val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False)
     val_loader = torch.utils.data.DataLoader(
         val_dataset, batch_size=args.batch_size // dist.get_world_size(), shuffle=False,
         num_workers=args.workers, pin_memory=True, sampler=val_sampler)
 
-
     if args.evaluate:
         _, mAP = validate(val_loader, model, criterion, args, logger)
         logger.info(' * mAP {mAP:.5f}'
-              .format(mAP=mAP))
+                    .format(mAP=mAP))
         return
-    
 
     epoch_time = AverageMeterHMS('TT')
     eta = AverageMeterHMS('ETA', val_only=True)
@@ -329,8 +333,8 @@ def main_worker(args, logger):
         prefix='=> Test Epoch: ')
 
     # one cycle learning rate
-    scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=len(train_loader), epochs=args.epochs, pct_start=0.2)
-
+    scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=len(train_loader),
+                                        epochs=args.epochs, pct_start=0.2)
 
     end = time.time()
     best_epoch = -1
@@ -348,20 +352,21 @@ def main_worker(args, logger):
         torch.cuda.empty_cache()
 
         # train for one epoch
-        loss = train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, args, logger)
+        train_loss = train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, args, logger)
 
         if summary_writer:
             # tensorboard logger
-            summary_writer.add_scalar('train_loss', loss, epoch)
+            summary_writer.add_scalar('train_loss', train_loss, epoch)
             # summary_writer.add_scalar('train_acc1', acc1, epoch)
             summary_writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], epoch)
 
         if epoch % args.val_interval == 0:
 
             # evaluate on validation set
-            loss, mAP = validate(val_loader, model, criterion, args, logger)
+
+            val_loss, mAP = validate(val_loader, model, criterion, args, logger)
             loss_ema, mAP_ema = validate(val_loader, ema_m.module, criterion, args, logger)
-            losses.update(loss)
+            losses.update(val_loss)
             mAPs.update(mAP)
             losses_ema.update(loss_ema)
             mAPs_ema.update(mAP_ema)
@@ -374,9 +379,15 @@ def main_worker(args, logger):
 
             progress.display(epoch, logger)
 
+            wandb.log({'train_loss': train_loss,
+                       'val_loss': val_loss,
+                       'val_loss_ema': loss_ema,
+                       'mAP': mAP,
+                       'gpu memory': torch.cuda.max_memory_allocated() / 1024.0 / 1024.0},
+                      step=epoch)
             if summary_writer:
                 # tensorboard logger
-                summary_writer.add_scalar('val_loss', loss, epoch)
+                summary_writer.add_scalar('val_loss', val_loss, epoch)
                 summary_writer.add_scalar('val_mAP', mAP, epoch)
                 summary_writer.add_scalar('val_loss_ema', loss_ema, epoch)
                 summary_writer.add_scalar('val_mAP_ema', mAP_ema, epoch)
@@ -387,7 +398,7 @@ def main_worker(args, logger):
                 best_regular_epoch = epoch
             if mAP_ema > best_ema_mAP:
                 best_ema_mAP = max(mAP_ema, best_ema_mAP)
-            
+
             if mAP_ema > mAP:
                 mAP = mAP_ema
                 state_dict = ema_m.module.state_dict()
@@ -407,7 +418,7 @@ def main_worker(args, logger):
                     'arch': args.backbone,
                     'state_dict': state_dict,
                     'best_mAP': best_mAP,
-                    'optimizer' : optimizer.state_dict(),
+                    'optimizer': optimizer.state_dict(),
                 }, is_best=is_best, filename=os.path.join(args.output, 'checkpoint.pth.tar'))
             # filename=os.path.join(args.output, 'checkpoint_{:04d}.pth.tar'.format(epoch))
 
@@ -417,11 +428,10 @@ def main_worker(args, logger):
                     'arch': args.backbone,
                     'state_dict': model.state_dict(),
                     'best_mAP': best_mAP,
-                    'optimizer' : optimizer.state_dict(),
+                    'optimizer': optimizer.state_dict(),
                 }, is_best=is_best, filename=os.path.join(args.output, 'checkpoint_nan.pth.tar'))
                 logger.info('Loss is NaN, break')
                 sys.exit(1)
-
 
             # early stop
             if args.early_stop:
@@ -431,21 +441,20 @@ def main_worker(args, logger):
                         if dist.get_rank() == 0 and args.kill_stop:
                             filename = sys.argv[0].split(' ')[0].strip()
                             killedlist = kill_process(filename, os.getpid())
-                            logger.info("Kill all process of {}: ".format(filename) + " ".join(killedlist)) 
+                            logger.info("Kill all process of {}: ".format(filename) + " ".join(killedlist))
                         break
 
     print("Best mAP:", best_mAP)
 
     if summary_writer:
         summary_writer.close()
-    
-    return 0
 
+    return 0
 
 
 def train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, args, logger):
     scaler = torch.cuda.amp.GradScaler(enabled=args.amp)
-    
+
     batch_time = AverageMeter('T', ':5.3f')
     data_time = AverageMeter('DT', ':5.3f')
     speed_gpu = AverageMeter('S1', ':.1f')
@@ -509,7 +518,6 @@ def train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, ar
     return losses.avg
 
 
-
 @torch.no_grad()
 def validate(val_loader, model, criterion, args, logger):
     batch_time = AverageMeter('Time', ':5.3f')
@@ -569,7 +577,7 @@ def validate(val_loader, model, criterion, args, logger):
             _meter_reduce if dist.get_world_size() > 1 else lambda x: x.avg,
             [losses]
         )
-        
+
         # import ipdb; ipdb.set_trace()
         # calculate mAP
         saved_data = torch.cat(saved_data, 0).numpy()
@@ -581,9 +589,10 @@ def validate(val_loader, model, criterion, args, logger):
         if dist.get_rank() == 0:
             print("Calculating mAP:")
             filenamelist = ['saved_data_tmp.{}.txt'.format(ii) for ii in range(dist.get_world_size())]
-            metric_func = voc_mAP                
-            mAP, aps = metric_func([os.path.join(args.output, _filename) for _filename in filenamelist], args.num_class, return_each=True)
-            
+            metric_func = voc_mAP
+            mAP, aps = metric_func([os.path.join(args.output, _filename) for _filename in filenamelist], args.num_class,
+                                   return_each=True)
+
             logger.info("  mAP: {}".format(mAP))
             logger.info("   aps: {}".format(np.array2string(aps, precision=5)))
         else:
@@ -609,6 +618,7 @@ def add_weight_decay(model, weight_decay=1e-4, skip_list=()):
     return [
         {'params': no_decay, 'weight_decay': 0.},
         {'params': decay, 'weight_decay': weight_decay}]
+
 
 class ModelEma(torch.nn.Module):
     def __init__(self, model, decay=0.9997, device=None):
@@ -657,6 +667,7 @@ def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self, name, fmt=':f', val_only=False):
         self.name = name
         self.fmt = fmt
@@ -685,14 +696,16 @@ class AverageMeter(object):
 
 class AverageMeterHMS(AverageMeter):
     """Meter for timer in HH:MM:SS format"""
+
     def __str__(self):
         if self.val_only:
             fmtstr = '{name} {val}'
         else:
             fmtstr = '{name} {val} ({sum})'
-        return fmtstr.format(name=self.name, 
-                             val=str(datetime.timedelta(seconds=int(self.val))), 
+        return fmtstr.format(name=self.name,
+                             val=str(datetime.timedelta(seconds=int(self.val))),
                              sum=str(datetime.timedelta(seconds=int(self.sum))))
+
 
 class ProgressMeter(object):
     def __init__(self, num_batches, meters, prefix=""):
@@ -711,10 +724,10 @@ class ProgressMeter(object):
         return '[' + fmt + '/' + fmt.format(num_batches) + ']'
 
 
-
-def kill_process(filename:str, holdpid:int) -> List[str]:
+def kill_process(filename: str, holdpid: int) -> List[str]:
     import subprocess, signal
-    res = subprocess.check_output("ps aux | grep {} | grep -v grep | awk '{{print $2}}'".format(filename), shell=True, cwd="./")
+    res = subprocess.check_output("ps aux | grep {} | grep -v grep | awk '{{print $2}}'".format(filename), shell=True,
+                                  cwd="./")
     res = res.decode('utf-8')
     idlist = [i.strip() for i in res.split('\n') if i != '']
     print("kill: {}".format(idlist))
@@ -722,6 +735,7 @@ def kill_process(filename:str, holdpid:int) -> List[str]:
         if idname != str(holdpid):
             os.kill(int(idname), signal.SIGKILL)
     return idlist
+
 
 if __name__ == '__main__':
     main()

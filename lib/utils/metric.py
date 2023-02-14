@@ -3,9 +3,6 @@
 import numpy as np
 
 def voc_ap(rec, prec, true_num):
-    print('METRIC')
-    print('rec',rec)
-    print('prec', prec)
     mrec = np.concatenate(([0.], rec, [1.]))
     mpre = np.concatenate(([0.], prec, [0.]))
     for i in range(mpre.size - 1, 0, -1):
@@ -33,6 +30,10 @@ def voc_mAP(imagessetfilelist, num, return_each=False):
     tp = np.zeros(sample_num)
     fp = np.zeros(sample_num)
     aps = []
+
+    print('seg',seg.shape,seg)
+    print('gt_label', gt_label.shape, gt_label)
+
 
     for class_id in range(class_num):
         confidence = seg[:,class_id]

@@ -1,4 +1,5 @@
 # most borrow from: https://github.com/HCPLab-SYSU/SSGRL/blob/master/utils/metrics.py
+from sklearn.metrics import f1_score
 
 import numpy as np
 

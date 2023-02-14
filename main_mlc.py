@@ -1,7 +1,9 @@
 # python3 -m torch.distributed.launch --nproc_per_node=1 main_mlc.py --world-size 1 --rank 0
-IMG_SIZE = 224  # default 448
-BS = 64  # default 256
-LR = 1e-3 # default dans le code 1e-1 dans le papier 1e-4 donc bizarre
+IMG_SIZE = 32  # default 448
+BS = 16  # default 256
+LR = 1e-3  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
+
+BACKBONE = 'resnet101' #default 'resnet101'
 
 WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'
 WANDB_GROUP = 'q2l'
@@ -98,7 +100,7 @@ def parser_args():
                         metavar='W', help='weight decay (default: 1e-2)',
                         dest='weight_decay')
 
-    parser.add_argument('-p', '--print-freq', default=10, type=int,
+    parser.add_argument('-p', '--print-freq', default=100, type=int,
                         metavar='N', help='print frequency (default: 10)')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
@@ -151,7 +153,7 @@ def parser_args():
     parser.add_argument('--pre_norm', action='store_true')
     parser.add_argument('--position_embedding', default='sine', type=str, choices=('sine'),
                         help="Type of positional embedding to use on top of the image features")
-    parser.add_argument('--backbone', default='resnet101', type=str,
+    parser.add_argument('--backbone', default=BACKBONE, type=str,
                         help="Name of the convolutional backbone to use")
     parser.add_argument('--keep_other_self_attn_dec', action='store_true',
                         help='keep the other self attention modules in transformer decoders, which will be removed default.')
@@ -170,6 +172,8 @@ def parser_args():
     args = parser.parse_args()
     return args
 
+import os
+local_rank = int(os.environ["LOCAL_RANK"])
 
 def get_args():
     args = parser_args()

@@ -3,6 +3,9 @@
 import numpy as np
 
 def voc_ap(rec, prec, true_num):
+    print('METRIC')
+    print('rec',rec)
+    print('prec', prec)
     mrec = np.concatenate(([0.], rec, [1.]))
     mpre = np.concatenate(([0.], prec, [0.]))
     for i in range(mpre.size - 1, 0, -1):

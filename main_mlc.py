@@ -47,7 +47,6 @@ from utils.slconfig import get_raw_dict
 from pathlib import Path
 
 
-from sklearn.metrics import f1_score, hamming_loss
 
 wandb.login()
 

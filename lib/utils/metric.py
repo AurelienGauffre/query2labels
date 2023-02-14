@@ -57,7 +57,17 @@ def voc_mAP(imagessetfilelist, num, return_each=False):
     np.set_printoptions(precision=6, suppress=True)
     aps = np.array(aps) * 100
     mAP = np.mean(aps)
+
+
+    f1_micro =  f1_score(gt_label,
+                                 seg[:,:num]>.5 ,
+                                 average='micro')
+    mAP_sklearn_micro = f1_score(gt_label,
+                      seg[:, :num] > .5,
+                      average='micro')
+
+
     if return_each:
-        return mAP, aps
+        return mAP, aps, f1_micro
     return mAP
 

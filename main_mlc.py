@@ -1,12 +1,12 @@
 # python3 -m torch.distributed.launch --nproc_per_node=1 main_mlc.py --world-size 1 --rank 0
-IMG_SIZE = 32  # default 448
-BS = 16  # default 256
-LR = 1e-3  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
+IMG_SIZE = 224  # default 448
+BS = 256  # default 256
+LR = 1e-4  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
 
 BACKBONE = 'resnet101' #default 'resnet101'
 
 WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'
-WANDB_GROUP = 'q2l'
+WANDB_GROUP = 'q2l_2'
 WORKERS = 8
 
 import argparse

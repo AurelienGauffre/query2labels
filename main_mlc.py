@@ -2,8 +2,9 @@
 IMG_SIZE = 224  # default 448
 BS = 256  # default 256
 LR = 1e-4  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
+EPOCHS = 20
 
-BACKBONE = 'resnet101' #default 'resnet101'
+BACKBONE = 'resnet101'  # default 'resnet101'
 
 WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'
 WANDB_GROUP = 'q2l_2'
@@ -46,8 +47,6 @@ from utils.slconfig import get_raw_dict
 
 from pathlib import Path
 
-
-
 wandb.login()
 
 
@@ -83,7 +82,7 @@ def parser_args():
 
     parser.add_argument('-j', '--workers', default=WORKERS, type=int, metavar='N',
                         help='number of data loading workers (default: 32)')
-    parser.add_argument('--epochs', default=80, type=int, metavar='N',
+    parser.add_argument('--epochs', default=EPOCHS, type=int, metavar='N',
                         help='number of total epochs to run')
 
     parser.add_argument('--val_interval', default=1, type=int, metavar='N',
@@ -174,8 +173,11 @@ def parser_args():
     args = parser.parse_args()
     return args
 
+
 import os
+
 local_rank = int(os.environ["LOCAL_RANK"])
+
 
 def get_args():
     args = parser_args()
@@ -325,7 +327,7 @@ def main_worker(args, logger):
         num_workers=args.workers, pin_memory=True, sampler=val_sampler)
 
     if args.evaluate:
-        _, mAP = validate(val_loader, model, criterion, args, logger)
+        _, mAP, f1_micro = validate(val_loader, model, criterion, args, logger)
         logger.info(' * mAP {mAP:.5f}'
                     .format(mAP=mAP))
         return
@@ -373,8 +375,8 @@ def main_worker(args, logger):
 
             # evaluate on validation set
 
-            val_loss, mAP = validate(val_loader, model, criterion, args, logger)
-            loss_ema, mAP_ema = validate(val_loader, ema_m.module, criterion, args, logger)
+            val_loss, mAP, val_micro_f1 = validate(val_loader, model, criterion, args, logger)
+            loss_ema, mAP_ema, val_f1_micro_ema = validate(val_loader, ema_m.module, criterion, args, logger)
             losses.update(val_loss)
             mAPs.update(mAP)
             losses_ema.update(loss_ema)
@@ -392,6 +394,9 @@ def main_worker(args, logger):
                        'val_loss': val_loss,
                        'val_loss_ema': loss_ema,
                        'mAP': mAP,
+                       'mAP_ema': mAP_ema,
+                       'f1_micro': val_micro_f1,
+                       'f1_micro_ema': val_f1_micro_ema,
                        'gpu memory': torch.cuda.max_memory_allocated() / 1024.0 / 1024.0},
                       step=epoch)
             if summary_writer:
@@ -599,8 +604,9 @@ def validate(val_loader, model, criterion, args, logger):
             print("Calculating mAP:")
             filenamelist = ['saved_data_tmp.{}.txt'.format(ii) for ii in range(dist.get_world_size())]
             metric_func = voc_mAP
-            mAP, aps = metric_func([os.path.join(args.output, _filename) for _filename in filenamelist], args.num_class,
-                                   return_each=True)
+            mAP, aps, f1_micro = metric_func([os.path.join(args.output, _filename) for _filename in filenamelist],
+                                             args.num_class,
+                                             return_each=True)
 
             logger.info("  mAP: {}".format(mAP))
             logger.info("   aps: {}".format(np.array2string(aps, precision=5)))
@@ -610,7 +616,7 @@ def validate(val_loader, model, criterion, args, logger):
         if dist.get_world_size() > 1:
             dist.barrier()
 
-    return loss_avg, mAP
+    return loss_avg, mAP, f1_micro
 
 
 ##################################################################################

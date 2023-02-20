@@ -6,9 +6,13 @@ EPOCHS = 20
 
 BACKBONE = 'resnet101'  # default 'resnet101'
 
-WANDB_RUN_NAME = f'baseline BS{BS} IMG_SIZE{IMG_SIZE}'
-WANDB_GROUP = 'q2l_2'
+WANDB_RUN_NAME = f'q2l {BS}_{IMG_SIZE}'
+WANDB_GROUP = 'q2l'
 WORKERS = 8
+
+DTGFL = True
+PRETRAINED = True
+AMP = True
 
 import argparse
 import math
@@ -61,7 +65,7 @@ def parser_args():
                         help='path to output folder')
     parser.add_argument('--num_class', default=80, type=int,
                         help="Number of query slots")
-    parser.add_argument('--pretrained', dest='pretrained', action='store_true',
+    parser.add_argument('--pretrained', dest='pretrained', action='store_true',default=PRETRAINED,
                         help='use pre-trained model. default is False. ')
     parser.add_argument('--optim', default='AdamW', type=str, choices=['AdamW', 'Adam_twd'],
                         help='which optim to use')
@@ -69,7 +73,7 @@ def parser_args():
     # loss
     parser.add_argument('--eps', default=1e-5, type=float,
                         help='eps for focal loss (default: 1e-5)')
-    parser.add_argument('--dtgfl', action='store_true', default=False,
+    parser.add_argument('--dtgfl', action='store_true', default=DTGFL,
                         help='disable_torch_grad_focal_loss in asl')
     parser.add_argument('--gamma_pos', default=0, type=float,
                         metavar='gamma_pos', help='gamma pos for simplified asl loss')
@@ -164,7 +168,7 @@ def parser_args():
                         help="keep the input projection layer. Needed when the channel of image features is different from hidden_dim of Transformer layers.")
 
     # * raining
-    parser.add_argument('--amp', action='store_true', default=False,
+    parser.add_argument('--amp', action='store_true', default=AMP,
                         help='apply amp')
     parser.add_argument('--early-stop', action='store_true', default=False,
                         help='apply early stop')

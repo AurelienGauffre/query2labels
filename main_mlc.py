@@ -4,9 +4,9 @@ BS = 256  # default 256
 LR = 1e-4  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
 EPOCHS = 20
 
-BACKBONE = 'resnet101'  # default 'resnet101'
+BACKBONE = 'resnet18'  # default 'resnet101'
 
-WANDB_RUN_NAME = f'q2l {BS}_{IMG_SIZE}'
+WANDB_RUN_NAME = f'q2l {BS}_{IMG_SIZE}_{BACKBONE}'
 WANDB_GROUP = 'q2l'
 WORKERS = 8
 

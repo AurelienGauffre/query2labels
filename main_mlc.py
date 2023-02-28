@@ -3,7 +3,8 @@ IMG_SIZE = 224  # default 448
 BS = 256  # default 256
 LR = 1e-4  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
 EPOCHS = 20
-
+DIM_FEED_FORWARD = 512 #defualt 8192 for resnet 100
+HIDDEN_DIM = 512 # default 2048
 BACKBONE = 'resnet18'  # default 'resnet101'
 
 WANDB_RUN_NAME = f'q2l {BS}_{IMG_SIZE}_{BACKBONE}'
@@ -147,9 +148,9 @@ def parser_args():
                         help="Number of encoding layers in the transformer")
     parser.add_argument('--dec_layers', default=2, type=int,
                         help="Number of decoding layers in the transformer")
-    parser.add_argument('--dim_feedforward', default=8192, type=int,
+    parser.add_argument('--dim_feedforward', default=DIM_FEED_FORWARD, type=int,
                         help="Intermediate size of the feedforward layers in the transformer blocks")
-    parser.add_argument('--hidden_dim', default=2048, type=int,
+    parser.add_argument('--hidden_dim', default=HIDDEN_DIM, type=int,
                         help="Size of the embeddings (dimension of the transformer)")
     parser.add_argument('--dropout', default=0.1, type=float,
                         help="Dropout applied in the transformer")

@@ -254,6 +254,12 @@ def main_worker(args, logger):
     # build model
     model = build_q2l(args)
     model = model.cuda()
+    nb_params = sum(p.numel() for p in model.parameters())
+    nb_params_trained = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f'============='
+          f'Number of total   params {nb_params}'
+          f'Number of trained params {nb_params_trained}')
+
     ema_m = ModelEma(model, args.ema_decay)  # 0.9997
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], broadcast_buffers=False)
 

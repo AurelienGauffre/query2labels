@@ -3,8 +3,9 @@ IMG_SIZE = 224  # default 448
 BS = 256  # default 256
 LR = 1e-4  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
 EPOCHS = 20
-DIM_FEED_FORWARD = 512 #defualt 8192 for resnet 100
+
 HIDDEN_DIM = 512 # default 2048
+DIM_FEED_FORWARD = HIDDEN_DIM*4 #default 8192 for resnet 100
 BACKBONE = 'resnet18'  # default 'resnet101'
 
 WANDB_RUN_NAME = f'q2l {BS}_{IMG_SIZE}_{BACKBONE}'

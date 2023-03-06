@@ -339,7 +339,7 @@ def main_worker(args, logger):
         num_workers=args.workers, pin_memory=True, sampler=val_sampler)
 
     if args.evaluate:
-        _, mAP, f1_micro = validate(val_loader, model, criterion, args, logger)
+        _, mAP, f1_micro, f1_macro = validate(val_loader, model, criterion, args, logger)
         logger.info(' * mAP {mAP:.5f}'
                     .format(mAP=mAP))
         return
@@ -387,8 +387,8 @@ def main_worker(args, logger):
 
             # evaluate on validation set
 
-            val_loss, mAP, val_micro_f1 = validate(val_loader, model, criterion, args, logger)
-            loss_ema, mAP_ema, val_f1_micro_ema = validate(val_loader, ema_m.module, criterion, args, logger)
+            val_loss, mAP, val_micro_f1,val_macro_f1 = validate(val_loader, model, criterion, args, logger)
+            loss_ema, mAP_ema, val_f1_micro_ema,val_macro_f1_ema= validate(val_loader, ema_m.module, criterion, args, logger)
             losses.update(val_loss)
             mAPs.update(mAP)
             losses_ema.update(loss_ema)
@@ -408,6 +408,7 @@ def main_worker(args, logger):
                        'mAP': mAP,
                        'mAP_ema': mAP_ema,
                        'f1_micro': val_micro_f1,
+                       'f1_macro': val_macro_f1,
                        'f1_micro_ema': val_f1_micro_ema,
                        'gpu memory': torch.cuda.max_memory_allocated() / 1024.0 / 1024.0},
                       step=epoch)
@@ -616,7 +617,7 @@ def validate(val_loader, model, criterion, args, logger):
             print("Calculating mAP:")
             filenamelist = ['saved_data_tmp.{}.txt'.format(ii) for ii in range(dist.get_world_size())]
             metric_func = voc_mAP
-            mAP, aps, f1_micro = metric_func([os.path.join(args.output, _filename) for _filename in filenamelist],
+            mAP, aps, f1_micro, f1_macro = metric_func([os.path.join(args.output, _filename) for _filename in filenamelist],
                                              args.num_class,
                                              return_each=True)
 
@@ -628,7 +629,7 @@ def validate(val_loader, model, criterion, args, logger):
         if dist.get_world_size() > 1:
             dist.barrier()
 
-    return loss_avg, mAP, f1_micro
+    return loss_avg, mAP, f1_micro, f1_macro
 
 
 ##################################################################################

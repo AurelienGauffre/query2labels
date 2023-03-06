@@ -65,9 +65,12 @@ def voc_mAP(imagessetfilelist, num, return_each=False):
     f1_micro =  f1_score(gt_label,
                                  seg[:,:num]>.5 ,
                                  average='micro')
+    f1_macro = f1_score(gt_label,
+                        seg[:, :num] > .5,
+                        average='macro')
 
 
     if return_each:
-        return mAP, aps, f1_micro
+        return mAP, aps, f1_micro, f1_macro
     return mAP
 

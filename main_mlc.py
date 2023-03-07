@@ -1,12 +1,12 @@
 # python3 -m torch.distributed.launch --nproc_per_node=1 main_mlc.py --world-size 1 --rank 0
-IMG_SIZE = 224  # default 448
+IMG_SIZE = 448  # default 448
 BS = 256  # default 256
 LR = 1e-4  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
-EPOCHS = 20
+EPOCHS = 80 # 20 default 80 |?
 
-HIDDEN_DIM = 512 # default 2048
+HIDDEN_DIM = 2048 # default 2048
 DIM_FEED_FORWARD = HIDDEN_DIM*4 #default 8192 for resnet 100
-BACKBONE = 'resnet18'  # default 'resnet101'
+BACKBONE = 'resnet101'  # default 'resnet101'
 
 WANDB_RUN_NAME = f'q2l {BS}_{IMG_SIZE}_{BACKBONE}'
 WANDB_GROUP = 'q2l'

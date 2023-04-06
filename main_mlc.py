@@ -8,7 +8,7 @@ HIDDEN_DIM = 2048 # default 2048
 DIM_FEED_FORWARD = HIDDEN_DIM*4 #default 8192 for resnet 100
 BACKBONE = 'resnet101'  # default 'resnet101'
 
-WANDB_RUN_NAME = f'q2l {BS}_{IMG_SIZE}_{BACKBONE}'
+WANDB_RUN_NAME = f'q2l_official {BS}_{IMG_SIZE}_{BACKBONE}'
 WANDB_GROUP = 'q2l'
 WORKERS = 8
 
@@ -649,6 +649,7 @@ def add_weight_decay(model, weight_decay=1e-4, skip_list=()):
 
 
 class ModelEma(torch.nn.Module):
+    """ T"""
     def __init__(self, model, decay=0.9997, device=None):
         super(ModelEma, self).__init__()
         # make a copy of the model for accumulating moving average of weights
@@ -656,7 +657,6 @@ class ModelEma(torch.nn.Module):
         self.module.eval()
 
         # import ipdb; ipdb.set_trace()
-
         self.decay = decay
         self.device = device  # perform ema on different device from model if set
         if self.device is not None:

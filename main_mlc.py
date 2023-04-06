@@ -8,7 +8,7 @@ HIDDEN_DIM = 2048 # default 2048
 DIM_FEED_FORWARD = HIDDEN_DIM*4 #default 8192 for resnet 100
 BACKBONE = 'resnet101'  # default 'resnet101'
 
-WANDB_RUN_NAME = f'q2l_official {BS}_{IMG_SIZE}_{BACKBONE}'
+WANDB_RUN_NAME = f'q2l_official {BS}_{IMG_SIZE}_{BACKBONE}_epochs'
 WANDB_GROUP = 'q2l'
 WORKERS = 8
 
@@ -58,7 +58,7 @@ wandb.login()
 
 def parser_args():
     parser = argparse.ArgumentParser(description='Query2Label MSCOCO Training')
-    parser.add_argument('--dataname', help='dataname', default='coco14', choices=['coco14'])
+    parser.add_argument('--dataname', help='dataname', default='COCO', choices=['COCO'])
     # parser.add_argument('--dataset_dir', help='dir of dataset', default='/comp_robot/liushilong/data/COCO14/')
     parser.add_argument('--img_size', default=IMG_SIZE, type=int,
                         help='size of input images')

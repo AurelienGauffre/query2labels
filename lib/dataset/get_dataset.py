@@ -34,7 +34,7 @@ def get_datasets(args):
                                             normalize])
     
 
-    if args.dataname == 'coco' or args.dataname == 'coco14':
+    if args.dataname == 'COCO' or args.dataname == 'coco14':
         # ! config your data path here.
         dataset_dir = Path(Path.home() / 'datasets' / args.dataname)
         train_dataset = CoCoDataset(

@@ -1,6 +1,6 @@
 # python3 -m torch.distributed.launch --nproc_per_node=1 main_mlc.py --world-size 1 --rank 0
 IMG_SIZE = 448  # default 448
-BS = 128  # default 256
+BS = 64  # default 256
 LR = 1e-4  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
 EPOCHS = 20 # 20 default 80 |?
 

@@ -8,7 +8,7 @@ HIDDEN_DIM = 2048 # default 2048
 DIM_FEED_FORWARD = HIDDEN_DIM*4 #default 8192 for resnet 100
 BACKBONE = 'resnet101'  # default 'resnet101'
 
-WANDB_RUN_NAME = f'q2l_official {BS}_{IMG_SIZE}_{BACKBONE}_epochs'
+WANDB_RUN_NAME = f'q2l_official {BS}bs_{IMG_SIZE}px_{EPOCHS}_{BACKBONE}'
 WANDB_GROUP = 'q2l'
 WORKERS = 8
 

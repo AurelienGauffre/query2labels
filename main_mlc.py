@@ -2,7 +2,7 @@
 IMG_SIZE = 448  # default 448
 BS = 128  # default 256
 LR = 1e-4  # default dans le code 1e-1 dans le papier 1e-4 donc strange #todo a mettre a 1e-4
-EPOCHS = 20 # 20 default 80 |?
+EPOCHS = 30 # 20 default 80 |?
 
 HIDDEN_DIM = 2048 # default 2048
 DIM_FEED_FORWARD = HIDDEN_DIM*4 #default 8192 for resnet 100
